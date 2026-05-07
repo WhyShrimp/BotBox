@@ -42,11 +42,40 @@
 
         #arena {
             border-radius: 50%;
-            background: radial-gradient(circle, #2a4a7f 0%, #1a3a5f 70%, #0a1a2f 100%);
-            border: 8px solid #4a9eff;
-            box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+            background: radial-gradient(circle, #3a5a8f 0%, #2a4a6f 60%, #1a2a4f 100%);
+            border: 10px solid #5ab0ff;
+            box-shadow: 0 0 40px rgba(90, 176, 255, 0.7), inset 0 0 60px rgba(0, 0, 0, 0.3);
             position: relative;
             overflow: hidden;
+            width: 600px;
+            height: 600px;
+        }
+        
+        /* Сетка на арене для лучшей видимости */
+        #arena::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 580px;
+            height: 580px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+        }
+        
+        #arena::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            border: 2px dotted rgba(255, 255, 255, 0.1);
+            pointer-events: none;
         }
 
         .bot {
