@@ -1048,15 +1048,13 @@
             applyTacticPreset(1, 'balanced');
             applyTacticPreset(2, 'balanced');
             
-            renderLoop();
+            // Создаем ботов сразу при инициализации
+            bots = [
+                new Bot(1, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced }),
+                new Bot(2, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced })
+            ];
             
-            setTimeout(() => {
-                bots = [
-                    new Bot(1, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced }),
-                    new Bot(2, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced })
-                ];
-                drawArena();
-            }, 100);
+            renderLoop();
         }
 
         init();
