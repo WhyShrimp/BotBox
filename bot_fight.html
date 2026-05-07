@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Битва Ботов на Арене</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .arena-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+        }
+
+        #arena {
+            border-radius: 50%;
+            background: radial-gradient(circle, #2a4a7f 0%, #1a3a5f 70%, #0a1a2f 100%);
+            border: 8px solid #4a9eff;
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bot {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .bot-1 {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            border: 3px solid #ff8888;
+        }
+
+        .bot-2 {
+            background: linear-gradient(135deg, #4ecdc4, #44a3aa);
+            border: 3px solid #6ee7df;
+        }
+
+        .bot.stunned {
+            animation: stun 0.5s ease-in-out infinite;
+        }
+
+        .bot.attacking {
+            transform: scale(1.2);
+        }
+
+        .bot.blocking {
+            opacity: 0.7;
+            border-width: 5px;
+        }
+
+        @keyframes stun {
+            0%, 100% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+        }
+
+        .bot-config {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .bot-config h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            cursor: pointer;
+        }
+
+        select {
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            background: #2a4a7f;
+            color: white;
+            cursor: pointer;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .health-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .bot-1 .health-fill {
+            background: linear-gradient(90deg, #ff6b6b, #ff8888);
+        }
+
+        .bot-2 .health-fill {
+            background: linear-gradient(90deg, #4ecdc4, #6ee7df);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #startBtn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        #startBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        #resetBtn {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            color: white;
+        }
+
+        #resetBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+
+        .log {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-entry.bot1 {
+            color: #ff8888;
+        }
+
+        .log-entry.bot2 {
+            color: #6ee7df;
+        }
+
+        .log-entry.system {
+            color: #ffd700;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .winner {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+            font-weight: bold;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .effect-text {
+            position: absolute;
+            font-weight: bold;
+            font-size: 18px;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(1.2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Битва Ботов на Арене ⚔️</h1>
+    
+    <div class="game-container">
+        <div class="arena-container">
+            <div id="arena">
+                <div id="bot1" class="bot bot-1">B1</div>
+                <div id="bot2" class="bot bot-2">B2</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="bot-config">
+                <h3><span style="color: #ff8888;">●</span> Бот 1 (Красный)</h3>
+                <div class="config-row">
+                    <label>HP: <span id="hp1-val">100</span></div>
+                    <input type="range" id="hp1" min="50" max="200" value="100">
+                </div>
+                <div class="config-row">
+                    <label>Атака: <span id="atk1-val">15</span></div>
+                    <input type="range" id="atk1" min="5" max="30" value="15">
+                </div>
+                <div class="config-row">
+                    <label>Защита: <span id="def1-val">5</span></div>
+                    <input type="range" id="def1" min="0" max="15" value="5">
+                </div>
+                <div class="config-row">
+                    <label>Скорость: <span id="spd1-val">3</span></div>
+                    <input type="range" id="spd1" min="1" max="6" value="3">
+                </div>
+                <div class="config-row">
+                    <label>Тактика:</label>
+                    <select id="tactic1">
+                        <option value="balanced">Сбалансированная</option>
+                        <option value="aggressive">Агрессивная</option>
+                        <option value="defensive">Оборонительная</option>
+                        <option value="random">Случайная</option>
+                    </select>
+                </div>
+                <div class="health-bar">
+                    <div id="health1" class="health-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="bot-config">
+                <h3><span style="color: #6ee7df;">●</span> Бот 2 (Синий)</h3>
+                <div class="config-row">
+                    <label>HP: <span id="hp2-val">100</span></div>
+                    <input type="range" id="hp2" min="50" max="200" value="100">
+                </div>
+                <div class="config-row">
+                    <label>Атака: <span id="atk2-val">15</span></div>
+                    <input type="range" id="atk2" min="5" max="30" value="15">
+                </div>
+                <div class="config-row">
+                    <label>Защита: <span id="def2-val">5</span></div>
+                    <input type="range" id="def2" min="0" max="15" value="5">
+                </div>
+                <div class="config-row">
+                    <label>Скорость: <span id="spd2-val">3</span></div>
+                    <input type="range" id="spd2" min="1" max="6" value="3">
+                </div>
+                <div class="config-row">
+                    <label>Тактика:</label>
+                    <select id="tactic2">
+                        <option value="balanced">Сбалансированная</option>
+                        <option value="aggressive">Агрессивная</option>
+                        <option value="defensive">Оборонительная</option>
+                        <option value="random">Случайная</option>
+                    </select>
+                </div>
+                <div class="health-bar">
+                    <div id="health2" class="health-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button id="startBtn">▶ Старт</button>
+                <button id="resetBtn">🔄 Сброс</button>
+            </div>
+
+            <div id="status" class="status">Настройте ботов и нажмите Старт</div>
+
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Константы игры
+        const ARENA_RADIUS = 300;
+        const BOT_RADIUS = 25;
+        const ACTIONS = {
+            MOVE: 'move',
+            ATTACK: 'attack',
+            BLOCK: 'block',
+            DASH: 'dash',
+            HEAVY_ATTACK: 'heavy_attack',
+            COUNTER: 'counter'
+        };
+
+        // Тактики
+        const TACTICS = {
+            balanced: {
+                [ACTIONS.MOVE]: 0.3,
+                [ACTIONS.ATTACK]: 0.3,
+                [ACTIONS.BLOCK]: 0.2,
+                [ACTIONS.DASH]: 0.1,
+                [ACTIONS.HEAVY_ATTACK]: 0.05,
+                [ACTIONS.COUNTER]: 0.05
+            },
+            aggressive: {
+                [ACTIONS.MOVE]: 0.2,
+                [ACTIONS.ATTACK]: 0.4,
+                [ACTIONS.BLOCK]: 0.1,
+                [ACTIONS.DASH]: 0.15,
+                [ACTIONS.HEAVY_ATTACK]: 0.1,
+                [ACTIONS.COUNTER]: 0.05
+            },
+            defensive: {
+                [ACTIONS.MOVE]: 0.25,
+                [ACTIONS.ATTACK]: 0.2,
+                [ACTIONS.BLOCK]: 0.35,
+                [ACTIONS.DASH]: 0.05,
+                [ACTIONS.HEAVY_ATTACK]: 0.05,
+                [ACTIONS.COUNTER]: 0.1
+            },
+            random: {
+                [ACTIONS.MOVE]: 0.17,
+                [ACTIONS.ATTACK]: 0.17,
+                [ACTIONS.BLOCK]: 0.17,
+                [ACTIONS.DASH]: 0.17,
+                [ACTIONS.HEAVY_ATTACK]: 0.16,
+                [ACTIONS.COUNTER]: 0.16
+            }
+        };
+
+        // Состояние игры
+        let gameRunning = false;
+        let gameInterval = null;
+        let bots = [];
+
+        // Класс бота
+        class Bot {
+            constructor(id, config) {
+                this.id = id;
+                this.maxHp = config.hp;
+                this.hp = config.hp;
+                this.attack = config.attack;
+                this.defense = config.defense;
+                this.speed = config.speed;
+                this.tactic = config.tactic;
+                
+                // Позиция (относительно центра арены)
+                this.x = id === 1 ? -100 : 100;
+                this.y = 0;
+                
+                // Состояния
+                this.isStunned = false;
+                this.stunTurns = 0;
+                this.isBlocking = false;
+                this.isAttacking = false;
+                this.currentAction = null;
+            }
+
+            getDistanceTo(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            getDistanceToCenter() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+
+            isOutOfBounds() {
+                return this.getDistanceToCenter() > ARENA_RADIUS - BOT_RADIUS;
+            }
+
+            chooseAction(enemy) {
+                if (this.isStunned) {
+                    return ACTIONS.MOVE; // Оглушенный может только двигаться
+                }
+
+                // Проверка условий для смены тактики
+                let currentTactic = this.tactic;
+                const hpPercent = this.hp / this.maxHp;
+                
+                if (hpPercent < 0.3 && currentTactic !== 'defensive') {
+                    // При низком HP становится более оборонительным
+                    currentTactic = hpPercent < 0.15 ? 'defensive' : 'balanced';
+                } else if (hpPercent > 0.7 && enemy.hp / enemy.maxHp < 0.5) {
+                    // Если у врага мало HP, становимся агрессивнее
+                    currentTactic = 'aggressive';
+                }
+
+                const weights = TACTICS[currentTactic];
+                const rand = Math.random();
+                let cumulative = 0;
+                
+                for (const [action, weight] of Object.entries(weights)) {
+                    cumulative += weight;
+                    if (rand <= cumulative) {
+                        return action;
+                    }
+                }
+                
+                return ACTIONS.MOVE;
+            }
+
+            moveTowards(enemy) {
+                const dx = enemy.x - this.x;
+                const dy = enemy.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0) {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                }
+            }
+
+            moveAwayFrom(enemy) {
+                const dx = this.x - enemy.x;
+                const dy = this.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0) {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                }
+            }
+
+            moveRandomly() {
+                const angle = Math.random() * Math.PI * 2;
+                this.x += Math.cos(angle) * this.speed;
+                this.y += Math.sin(angle) * this.speed;
+            }
+
+            executeAction(action, enemy) {
+                this.currentAction = action;
+                this.isBlocking = false;
+                this.isAttacking = false;
+
+                switch (action) {
+                    case ACTIONS.MOVE:
+                        if (this.getDistanceTo(enemy) > 80) {
+                            this.moveTowards(enemy);
+                        } else {
+                            this.moveRandomly();
+                        }
+                        break;
+
+                    case ACTIONS.ATTACK:
+                        this.isAttacking = true;
+                        if (this.getDistanceTo(enemy) <= 80) {
+                            let damage = this.attack;
+                            let message = `атакует на ${damage} урона`;
+                            
+                            if (enemy.isBlocking) {
+                                damage = Math.max(1, damage - enemy.defense * 2);
+                                message = `атакует, но враг блокирует! Урон: ${damage}`;
+                            } else {
+                                enemy.hp -= damage;
+                            }
+                            
+                            // Небольшое отбрасывание
+                            const dx = enemy.x - this.x;
+                            const dy = enemy.y - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist > 0) {
+                                enemy.x += (dx / dist) * 10;
+                                enemy.y += (dy / dist) * 10;
+                            }
+                            
+                            logMessage(this.id, message);
+                            showEffect(this.id === 1 ? 'bot1' : 'bot2', `-${damage}`, '#ff0000');
+                        } else {
+                            logMessage(this.id, 'атакует в пустоту!');
+                        }
+                        setTimeout(() => this.isAttacking = false, 300);
+                        break;
+
+                    case ACTIONS.BLOCK:
+                        this.isBlocking = true;
+                        logMessage(this.id, 'блокирует удары');
+                        break;
+
+                    case ACTIONS.DASH:
+                        if (this.getDistanceTo(enemy) <= 100) {
+                            // Рывок к врагу с отбрасыванием
+                            const dx = enemy.x - this.x;
+                            const dy = enemy.y - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (dist > 0) {
+                                this.x += (dx / dist) * 30;
+                                this.y += (dy / dist) * 30;
+                                enemy.x += (dx / dist) * 20;
+                                enemy.y += (dy / dist) * 20;
+                                
+                                const dashDamage = Math.floor(this.attack * 0.5);
+                                if (!enemy.isBlocking) {
+                                    enemy.hp -= dashDamage;
+                                    showEffect(this.id === 1 ? 'bot1' : 'bot2', `DASH! -${dashDamage}`, '#ffa500');
+                                }
+                                logMessage(this.id, `делает рывок! Урон: ${dashDamage}`);
+                            }
+                        } else {
+                            this.moveTowards(enemy);
+                            this.x += (enemy.x - this.x) / Math.sqrt(Math.pow(enemy.x - this.x, 2) + Math.pow(enemy.y - this.y, 2)) * 20;
+                            this.y += (enemy.y - this.y) / Math.sqrt(Math.pow(enemy.x - this.x, 2) + Math.pow(enemy.y - this.y, 2)) * 20;
+                            logMessage(this.id, 'делает рывок вперед');
+                        }
+                        break;
+
+                    case ACTIONS.HEAVY_ATTACK:
+                        this.isAttacking = true;
+                        if (this.getDistanceTo(enemy) <= 70) {
+                            const damage = Math.floor(this.attack * 2);
+                            let actualDamage = damage;
+                            
+                            if (enemy.isBlocking) {
+                                actualDamage = Math.max(1, damage - enemy.defense);
+                                logMessage(this.id, `тяжелая атака! Враг блокирует. Урон: ${actualDamage}`);
+                            } else {
+                                enemy.hp -= damage;
+                                enemy.isStunned = true;
+                                enemy.stunTurns = 2;
+                                logMessage(this.id, `ТЯЖЕЛАЯ АТАКА! Урон: ${damage}, враг оглушен!`);
+                                
+                                // Сильное отбрасывание
+                                const dx = enemy.x - this.x;
+                                const dy = enemy.y - this.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist > 0) {
+                                    enemy.x += (dx / dist) * 30;
+                                    enemy.y += (dy / dist) * 30;
+                                }
+                                
+                                showEffect(this.id === 1 ? 'bot1' : 'bot2', `HEAVY! -${damage}`, '#ff00ff');
+                            }
+                        } else {
+                            logMessage(this.id, 'тяжелая атака в пустоту!');
+                        }
+                        setTimeout(() => this.isAttacking = false, 500);
+                        break;
+
+                    case ACTIONS.COUNTER:
+                        this.isBlocking = true;
+                        // Контратака будет обработана при получении урона
+                        logMessage(this.id, 'готовится к контратаке');
+                        break;
+                }
+
+                // Ограничение движения пределами арены
+                const distFromCenter = this.getDistanceToCenter();
+                if (distFromCenter > ARENA_RADIUS - BOT_RADIUS) {
+                    const angle = Math.atan2(this.y, this.x);
+                    this.x = Math.cos(angle) * (ARENA_RADIUS - BOT_RADIUS - 5);
+                    this.y = Math.sin(angle) * (ARENA_RADIUS - BOT_RADIUS - 5);
+                }
+            }
+
+            takeCounterDamage(attacker) {
+                if (this.currentAction === ACTIONS.COUNTER && !this.isStunned) {
+                    const counterDamage = Math.floor(this.attack * 0.8);
+                    attacker.hp -= counterDamage;
+                    logMessage(this.id, `КОНТРТАКА! Наносит ${counterDamage} урона`);
+                    showEffect(this.id === 1 ? 'bot1' : 'bot2', `COUNTER! -${counterDamage}`, '#00ffff');
+                    return true;
+                }
+                return false;
+            }
+
+            updateStun() {
+                if (this.isStunned) {
+                    this.stunTurns--;
+                    if (this.stunTurns <= 0) {
+                        this.isStunned = false;
+                        logMessage(this.id, 'снимает оглушение');
+                    }
+                }
+            }
+        }
+
+        // Логирование
+        function logMessage(botId, message) {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry bot${botId}`;
+            entry.textContent = `Бот ${botId}: ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            
+            // Ограничиваем размер лога
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function logSystem(message) {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry system';
+            entry.textContent = `⚡ ${message}`;
+            log.insertBefore(entry, log.firstChild);
+        }
+
+        // Визуальные эффекты
+        function showEffect(botElementId, text, color) {
+            const arena = document.getElementById('arena');
+            const bot = document.getElementById(botElementId);
+            const effect = document.createElement('div');
+            effect.className = 'effect-text';
+            effect.textContent = text;
+            effect.style.color = color;
+            
+            const botRect = bot.getBoundingClientRect();
+            const arenaRect = arena.getBoundingClientRect();
+            
+            effect.style.left = (bot.offsetLeft + 10) + 'px';
+            effect.style.top = (bot.offsetTop - 10) + 'px';
+            
+            arena.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 1000);
+        }
+
+        // Обновление позиции бота на экране
+        function updateBotPosition(bot) {
+            const botElement = document.getElementById(`bot${bot.id}`);
+            // Центр арены - это (300, 300), позиция бота относительно центра
+            const screenX = 300 + bot.x - BOT_RADIUS;
+            const screenY = 300 + bot.y - BOT_RADIUS;
+            
+            botElement.style.left = screenX + 'px';
+            botElement.style.top = screenY + 'px';
+            
+            // Обновление классов состояний
+            botElement.classList.toggle('stunned', bot.isStunned);
+            botElement.classList.toggle('blocking', bot.isBlocking);
+            botElement.classList.toggle('attacking', bot.isAttacking);
+        }
+
+        // Обновление полоски здоровья
+        function updateHealthBar(bot) {
+            const healthBar = document.getElementById(`health${bot.id}`);
+            const percent = (bot.hp / bot.maxHp) * 100;
+            healthBar.style.width = Math.max(0, percent) + '%';
+        }
+
+        // Игровой цикл
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            const bot1 = bots[0];
+            const bot2 = bots[1];
+
+            // Проверка победы
+            if (bot1.hp <= 0 || bot2.hp <= 0) {
+                endGame(bot1.hp <= 0 ? bot2 : bot1, 'HP истощено');
+                return;
+            }
+
+            if (bot1.isOutOfBounds()) {
+                endGame(bot2, 'Вытолкнут за арену');
+                return;
+            }
+
+            if (bot2.isOutOfBounds()) {
+                endGame(bot1, 'Вытолкнут за арену');
+                return;
+            }
+
+            // Обновление оглушения
+            bot1.updateStun();
+            bot2.updateStun();
+
+            // Выбор действий
+            const action1 = bot1.chooseAction(bot2);
+            const action2 = bot2.chooseAction(bot1);
+
+            // Выполнение действий (одновременно)
+            bot1.executeAction(action1, bot2);
+            bot2.executeAction(action2, bot1);
+
+            // Обработка контратак
+            if (action1 === ACTIONS.ATTACK || action1 === ACTIONS.HEAVY_ATTACK || action1 === ACTIONS.DASH) {
+                bot2.takeCounterDamage(bot1);
+            }
+            if (action2 === ACTIONS.ATTACK || action2 === ACTIONS.HEAVY_ATTACK || action2 === ACTIONS.DASH) {
+                bot1.takeCounterDamage(bot2);
+            }
+
+            // Обновление отображения
+            updateBotPosition(bot1);
+            updateBotPosition(bot2);
+            updateHealthBar(bot1);
+            updateHealthBar(bot2);
+        }
+
+        // Завершение игры
+        function endGame(winner, reason) {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            
+            const status = document.getElementById('status');
+            status.innerHTML = `🏆 Бот ${winner.id} победил! (${reason})`;
+            status.classList.add('winner');
+            
+            logSystem(`=== БОТ ${winner.id} ПОБЕДИЛ! (${reason}) ===`);
+            
+            document.getElementById('startBtn').disabled = false;
+        }
+
+        // Старт игры
+        function startGame() {
+            if (gameRunning) return;
+
+            // Получение настроек
+            const config1 = {
+                hp: parseInt(document.getElementById('hp1').value),
+                attack: parseInt(document.getElementById('atk1').value),
+                defense: parseInt(document.getElementById('def1').value),
+                speed: parseInt(document.getElementById('spd1').value),
+                tactic: document.getElementById('tactic1').value
+            };
+
+            const config2 = {
+                hp: parseInt(document.getElementById('hp2').value),
+                attack: parseInt(document.getElementById('atk2').value),
+                defense: parseInt(document.getElementById('def2').value),
+                speed: parseInt(document.getElementById('spd2').value),
+                tactic: document.getElementById('tactic2').value
+            };
+
+            // Создание ботов
+            bots = [
+                new Bot(1, config1),
+                new Bot(2, config2)
+            ];
+
+            // Сброс интерфейса
+            document.getElementById('status').textContent = 'Бой начался!';
+            document.getElementById('status').classList.remove('winner');
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('startBtn').disabled = true;
+
+            logSystem('=== БОЙ НАЧАЛСЯ! ===');
+            logSystem(`Бот 1: HP=${config1.hp}, ATK=${config1.attack}, DEF=${config1.defense}, SPD=${config1.speed}, Тактика=${config1.tactic}`);
+            logSystem(`Бот 2: HP=${config2.hp}, ATK=${config2.attack}, DEF=${config2.defense}, SPD=${config2.speed}, Тактика=${config2.tactic}`);
+
+            // Начальная позиция
+            updateBotPosition(bots[0]);
+            updateBotPosition(bots[1]);
+            updateHealthBar(bots[0]);
+            updateHealthBar(bots[1]);
+
+            // Запуск игрового цикла
+            gameRunning = true;
+            gameInterval = setInterval(gameLoop, 800); // Ход каждые 800мс
+        }
+
+        // Сброс игры
+        function resetGame() {
+            gameRunning = false;
+            clearInterval(gameInterval);
+            
+            document.getElementById('status').textContent = 'Настройте ботов и нажмите Старт';
+            document.getElementById('status').classList.remove('winner');
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('startBtn').disabled = false;
+            
+            // Сброс позиций ботов
+            const bot1El = document.getElementById('bot1');
+            const bot2El = document.getElementById('bot2');
+            bot1El.style.left = '175px';
+            bot1El.style.top = '275px';
+            bot2El.style.left = '375px';
+            bot2El.style.top = '275px';
+            
+            bot1El.classList.remove('stunned', 'blocking', 'attacking');
+            bot2El.classList.remove('stunned', 'blocking', 'attacking');
+            
+            document.getElementById('health1').style.width = '100%';
+            document.getElementById('health2').style.width = '100%';
+        }
+
+        // Обновление значений ползунков
+        function setupSliders() {
+            ['hp', 'atk', 'def', 'spd'].forEach(stat => {
+                [1, 2].forEach(bot => {
+                    const slider = document.getElementById(`${stat}${bot}`);
+                    const display = document.getElementById(`${stat}${bot}-val`);
+                    
+                    slider.addEventListener('input', () => {
+                        display.textContent = slider.value;
+                    });
+                });
+            });
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSliders();
+            
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+            
+            // Начальная позиция ботов
+            const bot1El = document.getElementById('bot1');
+            const bot2El = document.getElementById('bot2');
+            bot1El.style.left = '175px';
+            bot1El.style.top = '275px';
+            bot2El.style.left = '375px';
+            bot2El.style.top = '275px';
+        });
+    </script>
+</body>
+</html>
