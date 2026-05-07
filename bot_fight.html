@@ -1053,11 +1053,22 @@
                 new Bot(1, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced }),
                 new Bot(2, { hp: 100, attack: 15, defense: 5, speed: 3, weights: TACTIC_PRESETS.balanced })
             ];
+            // Первая отрисовка
+            drawArena();
             
+            // Запуск цикла анимации
             renderLoop();
+            
+            console.log("Игра инициализирована, боты созданы:", bots.length);
         }
 
-        init();
+        // Запуск после загрузки DOM
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+
     </script>
 </body>
 </html>
